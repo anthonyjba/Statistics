@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Regression con D3 </title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="css/dc.css">
+<style>
+body {
+  font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.x.axis path {
+  display: none;
+}
+
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+
+.reg {
+  fill: none;
+  stroke: orange;
+  stroke-width: 1.5px;
+}
+
+</style>
+</head>
+<body>
+
+<h2>D3</h2>  
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-xs-4">
+      DATOS:
+      <table class="table table-bordered table-striped" id="data-table">
+        <thead>
+          <tr class="header">
+            <th>SUPERFICIE</th>
+            <th>VALOR UNITARIO</th>
+          </tr>
+        </thead>
+      </table>
+      
+      <table class="table table-hover dc-data-table">
+      </table>
+    </div>
+    <div class="col-xs-8">
+      GRAFICO DE REGRESION:
+      <div id="graph"></div>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript" src="lib/d3.js"></script>
+<script type="text/javascript" src="lib/crossfilter.js"></script>
+<script type="text/javascript" src="lib/dc.js"></script>
+<script type="text/javascript" src="lib/simple_statistics.js"></script>
+
+<script type="text/javascript">
+var margin = {top: 20, right: 20, bottom: 30, left: 50},
+    width = 760 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+    
+var x = d3.scale.linear()
+    .range([0, width]);
+
+var y = d3.scale.linear()
+    .range([height, 0]);
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left");
+    
+var line = d3.svg.line()
+    .x(function(d) { return x(d.date); })
+    .y(function(d) { return y(d.close); });
+
+var svg = d3.select("#graph").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    
+d3.json("data/regresion.json", function(error, data) {
+  if (error) throw error;
+  
+  data.forEach(function(d) {
+    d.date = +d.X;
+    d.close = +d.Y / 10000;
+  });
+  console.log(data);
+
+  x.domain(d3.extent(data, function(d) { return d.date; }));
+  y.domain(d3.extent(data, function(d) { return d.close; }));
+
+  // Derive a linear regression
+  var lin = ss.linear_regression().data(data.map(function(d) {
+    return [+d.date, d.close];
+  })).line();
+
+  // Create a line based on the beginning and endpoints of the range
+  var lindata = x.domain().map(function(x) {
+    return {
+      date: new Date(x),
+      close: lin(+x)
+    };
+  });    
+  
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis);
+
+  svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis)
+    .append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("Price ($)");
+
+  svg.append("path")
+      .datum(data)
+      .attr("class", "line")
+      .attr("d", line);
+
+  svg.append("path")
+      .datum(lindata)
+      .attr("class", "reg")
+      .attr("d", line);
+    
+    /**Table */
+    var dsTable = dc.dataTable('.dc-data-table');
+     
+    dsTable.dimension(data)
+
+        // (_optional_) max number of records to be shown, `default = 25`
+        .size(10)
+        // There are several ways to specify the columns; see the data-table documentation.
+        // This code demonstrates generating the column header automatically based on the columns.
+        .columns([
+            // Use the `d.date` field; capitalized automatically
+            'Superfice',
+            'Unitario'
+        ])
+
+        // (_optional_) sort using the given field, `default = function(d){return d;}`
+        .sortBy(function (d) {
+            return d.X;
+        })
+        // (_optional_) sort order, `default = d3.ascending`
+        .order(d3.ascending)
+        // (_optional_) custom renderlet to post-process chart using [D3](http://d3js.org)
+        .on('renderlet', function (table) {
+            table.selectAll('.dc-table-group').classed('info', true);
+        });
+    
+
+});
+
+
+
+</script>
+</body>
+</html>
