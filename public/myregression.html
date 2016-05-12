@@ -4,39 +4,50 @@
 		<title>regression-js example</title>
 		<script src="http://code.jquery.com/jquery.min.js"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/flot/0.8.3/jquery.flot.canvas.js"></script>
-        <script language="javascript" type="text/javascript" src="lib/flot/jquery.flot.js"></script>
-        <script language="javascript" type="text/javascript" src="lib/flot/jquery.flot.time.js"></script>
-        <script language="javascript" type="text/javascript" src="lib/flot/jquery.flot.canvas.js"></script>
+    
+    <script type="text/javascript" src="lib/d3.js"></script>
+    <script language="javascript" type="text/javascript" src="lib/flot/jquery.flot.js"></script>
+    <script language="javascript" type="text/javascript" src="lib/flot/jquery.flot.time.js"></script>
+    <script language="javascript" type="text/javascript" src="lib/flot/jquery.flot.canvas.js"></script>
 		<script src="lib/regression.js"></script>
 
 		<script>
 		$(function(){
-			// Data
-			var data = [
-				[-10, -738],
-				[-9, -520],
-				[-8, -350],
-				[-7, -222],
-				[-6, -130],
-				[-5, -68],
-				[-4, -30],
-				[-3, -10],
-				[-2, -2],
-				[-1, 0],
-				[0, 2],
-				[1, 10],
-				[2, 30],
-				[3, 68],
-				[4, 130],
-				[5, 222],
-				[6, 350],
-				[7, 520],
-				[8, 738],
-				[9, 1010],
-				[10, 1342]
-			];
+			// // Data
+			// var data = [
+			// 	[-10, -738],
+			// 	[-9, -520],
+			// 	[-8, -350],
+			// 	[-7, -222],
+			// 	[-6, -130],
+			// 	[-5, -68],
+			// 	[-4, -30],
+			// 	[-3, -10],
+			// 	[-2, -2],
+			// 	[-1, 0],
+			// 	[0, 2],
+			// 	[1, 10],
+			// 	[2, 30],
+			// 	[3, 68],
+			// 	[4, 130],
+			// 	[5, 222],
+			// 	[6, 350],
+			// 	[7, 520],
+			// 	[8, 738],
+			// 	[9, 1010],
+			// 	[10, 1342]
+			// ];
+      
+      d3.csv("data/regression.csv", function(error, source) {
+        if (error) throw error;
+        
+        data = source.filter(function(d){ return d.ID_ESTADO >=1 && d.ID_ESTADO <=2 })
+        data = data.map(function(d){ return [ +d.SUPERFICIE, +d.VALOR_TRANS ]});
+              
 			// do the regression (polynomial to the third degree)
 			var myRegression = regression('linear', data, 3);
+      
+      console.log(myRegression.points);
 			// Plot the result
 			$.plot($('.graph'), [
 				{data: myRegression.points, label: 'Linear'},
@@ -44,6 +55,9 @@
 			]);
 			// print the equation out
 			$('h2').text(myRegression.string);
+      
+      });
+      
 		});
 		</script>
 

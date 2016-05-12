@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Formula de Regression con D3 </title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.css">
+    <!--<link rel="stylesheet" type="text/css" href="css/dc.css">-->
+<style>
+
+body {
+  font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.dot {
+  stroke: steelblue;
+}
+.reg {
+  fill: none;
+  stroke: orange;
+  stroke-width: 1.5px;
+}
+</style>
+<body>
+  <h2>[ Regression Lineal ] * D3 & Formula Manual</h2>  
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-xs-4">
+      DATOS:
+      <table class="table table-bordered table-striped" id="data-table">
+        <thead>
+          <tr class="header">
+            <th>SUPERFICIE</th>
+            <th>VALOR TRANSMISION</th>
+          </tr>
+        </thead>
+      </table>
+      
+      <table class="table table-hover dc-data-table">
+      </table>
+    </div>
+    <div class="col-xs-8">
+      GRAFICO DE REGRESION:
+      <div id="graph"></div>
+    </div>
+  </div>
+</div>
+
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script>
+
+var margin = {top: 20, right: 20, bottom: 30, left: 60},
+    width = 780 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+var x = d3.scale.linear()
+    .range([0, width]);
+
+var y = d3.scale.linear()
+    .range([height, 0]);
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left");
+
+var svg = d3.select("#graph").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+d3.csv("data/regression.csv", function(error, source) {
+  if (error) throw error;
+
+  data = source.filter(function(d){ return d.ID_ESTADO >=1 && d.ID_ESTADO <=2 })
+  //console.log(data);
+  
+  data.forEach(function(d) {
+    d.ejeH = +d.SUPERFICIE;
+    d.ejeV = +d.VALOR_TRANS;
+  });
+
+  x.domain(d3.extent(data, function(d) { return d.ejeH; })).nice();
+  y.domain(d3.extent(data, function(d) { return d.ejeV; })).nice();
+  
+    var x1 = data.map(function(d){return d.ejeH;});
+    var y1 = data.map(function(d){return d.ejeV;});
+    var linReg =   linearRegression(y1,x1);
+    console.log(linReg);
+    
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis)
+    .append("text")
+      .attr("class", "label")
+      .attr("x", width)
+      .attr("y", -6)
+      .style("text-anchor", "end")
+      .text("Superficie (m)");
+
+  svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis)
+    .append("text")
+      .attr("class", "label")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("V. Transmision (€)")
+
+  svg.selectAll(".dot")
+      .data(data)
+    .enter().append("circle")
+      .attr("class", "dot")
+      .attr("r",2)
+      .attr("cx", function(d) { return x(d.ejeH); })
+      .attr("cy", function(d) { return y(d.ejeV); })
+      .style("fill",  "#fff");
+      
+  var max = d3.max(data, function(d) { return d.ejeV; });
+  svg.append("svg:line")
+        .attr("class", "reg")
+        .attr("x1", x(0))
+        .attr("y1", y(linReg.intercept))
+        .attr("x2", x(max))
+        .attr("y2", y( (max*linReg.slope) + linReg.intercept ))
+
+});
+
+
+function linearRegression(y,x){
+/*Code taken from Trent Richardson's blog - Compute Linear Regressions in Javascript
+http://trentrichardson.com/2010/04/06/compute-linear-regressions-in-javascript/
+*/
+    var lr = {};
+    var n = y.length;
+    var sum_x = 0;
+    var sum_y = 0;
+    var sum_xy = 0;
+    var sum_xx = 0;
+    var sum_yy = 0;
+    
+    for (var i = 0; i < y.length; i++) {
+        sum_x += x[i];
+        sum_y += y[i];
+        sum_xy += (x[i]*y[i]);
+        sum_xx += (x[i]*x[i]);
+        sum_yy += (y[i]*y[i]);
+    } 
+    
+    lr['slope'] = (n * sum_xy - sum_x * sum_y) / (n*sum_xx - sum_x * sum_x);
+    lr['intercept'] = (sum_y - lr.slope * sum_x)/n;
+    lr['r2'] = Math.pow((n*sum_xy - sum_x*sum_y)/
+                        Math.sqrt((n*sum_xx-sum_x*sum_x)*(n*sum_yy-sum_y*sum_y)),2);
+    
+    return lr;
+}
+</script>
+
+
+</body>
+</html>

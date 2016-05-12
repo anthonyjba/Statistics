@@ -33,10 +33,5 @@ jspm_packages
 # Optional REPL history
 .node_repl_history
 
-#csv
-*.csv
-*.csv#
-
 #some directories
-data
 NoFilesSent

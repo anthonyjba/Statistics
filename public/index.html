@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <title>Regression con D3 </title>
+    <title>DC-TABLE </title>
     <meta charset="UTF-8">
     <link rel="stylesheet" type="text/css" href="css/bootstrap.css">
     <link rel="stylesheet" type="text/css" href="css/dc.css">
@@ -17,13 +17,12 @@ body {
   stroke: #000;
   shape-rendering: crispEdges;
 }
-
 .x.axis path {
   display: none;
 }
 
 .dot {
-  stroke: #000;
+  stroke: steelblue;
 }
 
 .line {
@@ -72,8 +71,8 @@ body {
 <script type="text/javascript" src="lib/simple_statistics.js"></script>
 
 <script type="text/javascript">
-var margin = {top: 20, right: 20, bottom: 30, left: 50},
-    width = 760 - margin.left - margin.right,
+var margin = {top: 20, right: 20, bottom: 30, left: 40},
+    width = 960 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
     
 var x = d3.scale.linear()
@@ -94,7 +93,7 @@ var yAxis = d3.svg.axis()
 //     .x(function(d) { return x(d.ejeH); })
 //     .y(function(d) { return y(d.ejeV); });
 
-var svg = d3.select("#graph").append("svg")
+var svg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
     .append("g")
@@ -112,6 +111,7 @@ d3.json("data/regresion.json", function(error, data) {
   x.domain(d3.extent(data, function(d) { return d.ejeH; })).nice();;
   y.domain(d3.extent(data, function(d) { return d.ejeV; })).nice();;
 
+/*
   // Derive a linear regression
   var lin = ss.linear_regression().data(data.map(function(d) {
     return [+d.ejeH, d.ejeV];
@@ -124,12 +124,37 @@ d3.json("data/regresion.json", function(error, data) {
       ejeV: lin(+x)
     };
   });    
-  
+  */
   svg.append("g")
       .attr("class", "x axis")
       .attr("transform", "translate(0," + height + ")")
       .call(xAxis)
-      .append("text")
+    .append("text")
+      .attr("class", "label")
+      .attr("x", width)
+      .attr("y", -6)
+      .style("text-anchor", "end")
+      .text("Sepal Width (cm)");
+
+  svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis)
+    .append("text")
+      .attr("class", "label")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("Sepal Length (cm)")
+
+  
+  
+  // x-axis
+  /*svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis)
+    .append("text")
       .attr("class", "label")
       .attr("x", width)
       .attr("y", -6)
@@ -150,15 +175,15 @@ d3.json("data/regresion.json", function(error, data) {
       .data(data)
     .enter().append("circle")
       .attr("class", "dot")
-      .attr("r", 1)
-      .attr("cx", function(d) { return x(d.sepalWidth); })
-      .attr("cy", function(d) { return y(d.sepalLength); })
-      //.style("fill", function(d) { return color(d.species); });
+      .attr("r", 2)
+      .attr("cx", function(d) { return x(d.ejeH); })
+      .attr("cy", function(d) { return y(d.ejeV); })
+      .style("fill",  "#fff"); //function(d) { return color(d.species); });
 
   svg.append("path")
       .datum(lindata)
       .attr("class", "reg")
-      .attr("d", line);
+      .attr("d", line);*/
     
     /**Table */
     var dsTable = dc.dataTable('.dc-data-table');
