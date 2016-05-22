@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title>Regression D3 - SimpleStatistic</title>
@@ -20,12 +20,35 @@ body {
 }
 
 .dot {
-  stroke: steelblue;
+  stroke: steelblue;  
+  cursor: pointer;
+}
+.dot:hover {
+    stroke-width: 10px;
+	stroke: rgba(68, 127, 255, 0.3);
 }
 .reg {
   fill: none;
   stroke: orange;
   stroke-width: 1.5px;
+}
+.tooltip {
+    font-family: "Helvetica Neue", "Helvetica", Arial sans-serif;
+    position: absolute;
+    width: 180px;
+    height: 45px;
+    padding: 8px;
+    font-size: 10px;
+    color: #000;
+    background: rgb(255,255,255);
+    box-shadow: 0 3px 5px rgba(0,0,0,0.5),0 0 0 1px rgba(0,0,0,.08);
+    border-radius: 2px;
+    pointer-events: none;
+}
+.g-rc {
+    border-bottom: 1px solid rgb(130,130,130);
+    margin-bottom: 2px;
+    padding-bottom: 2px;
 }
 </style>
 <body>
@@ -48,7 +71,13 @@ body {
     </div>
     <div class="col-xs-8">
       GRAFICO DE REGRESION:
+      <button id="save">Save as Image</button>
+<a href="'imgData'" download="download">Download</a>
       <div id="graph"></div>
+      <div id="pngdataurl"></div>
+
+	<canvas width="960" height="500" style="display:none"></canvas>
+
     </div>
   </div>
 </div>
@@ -56,6 +85,11 @@ body {
 <script src="//d3js.org/d3.v3.min.js"></script>
 <script type="text/javascript" src="lib/simple_statistics/simple_statistics.min.js"></script>
 <script>
+    
+    var tooltip =  {
+            headerFormat: '<b>{series.name}</b><br>',
+            pointFormat: '{point.x} cm, {point.y} kg'
+        }
 
 var margin = {top: 20, right: 20, bottom: 30, left: 60},
     width = 780 - margin.left - margin.right,
@@ -80,6 +114,11 @@ var svg = d3.select("#graph").append("svg")
     .attr("height", height + margin.top + margin.bottom)
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    
+// add the tooltip area to the webpage
+var tooltip = d3.select("#graph").append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0);    
 
 d3.csv("data/regression.csv", function(error, source) {
   if (error) throw error;
@@ -98,12 +137,7 @@ d3.csv("data/regression.csv", function(error, source) {
     var linReg = ss.linearRegression(lrdata);
 
     console.log(linReg);
-    
-    // var lin = ss.linear_regression().data(data.map(function(d) {
-    //   return [+d.ejeH, d.ejeV];
-    // })).line();
-    // console.log(lin);
-    
+        
   svg.append("g")
       .attr("class", "x axis")
       .attr("transform", "translate(0," + height + ")")
@@ -133,7 +167,24 @@ d3.csv("data/regression.csv", function(error, source) {
       .attr("r",2)
       .attr("cx", function(d) { return x(d.ejeH); })
       .attr("cy", function(d) { return y(d.ejeV); })
-      .style("fill",  "#fff");
+      .style("fill",  "rgba(0, 0, 0, 0.2)")
+            .on("mouseover", function (d) {
+                tooltip.transition()
+                     .duration(200)
+                     .style("opacity", .9);
+                tooltip.html("<div class='g-rc'>Referencia: " + d["ID_MUESTRA"] + "</div>(Sup: " + d.ejeH
+                  + " m, V.Tras: " + d.ejeV + ")")
+                     .style("left", (d3.event.offsetX + 15) + "px")
+                     .style("top", (d3.event.offsetY - 38) + "px");
+            })
+            .on("mouseout", function (d) {
+                tooltip.transition()
+                    .duration(500)
+                    .style("opacity", 0);
+            })
+            .on("click", function (d) {                
+                d.isSelected = !d.hasOwnProperty("isSelected") ? true : !d.isSelected;
+            });
       
   var max = d3.max(data, function(d) { return d.ejeV; });
   svg.append("svg:line")
@@ -142,6 +193,49 @@ d3.csv("data/regression.csv", function(error, source) {
         .attr("y1", y(linReg.b))
         .attr("x2", x(max))
         .attr("y2", y( (max*linReg.m) + linReg.b ))
+
+
+d3.select("#download")
+    .on("click", function () {
+    var serializer = new XMLSerializer();
+    var xmlString = serializer.serializeToString(d3.select('#graph').node());
+    var imgData = 'data:image/svg+xml;base64,' + btoa(xmlString);
+    console.log(imgData)
+});
+
+d3.select("#save").on("click", function(){
+  var html = d3.select("#graph")
+        .attr("version", 1.1)
+        .attr("xmlns", "http://www.w3.org/2000/svg")
+        .node().parentNode.innerHTML;
+
+  //console.log(html);
+   var imgsrc = 'data:image/svg+xml;base64,'+ window.btoa(unescape(encodeURIComponent(html)));
+//   var img = '<img src="'+imgsrc+'">'; 
+//   d3.select("#svgdataurl").html(img);
+
+
+  var canvas = document.querySelector("canvas"),
+	  context = canvas.getContext("2d");
+
+  var image = new Image;
+  image.src = imgsrc;
+  image.onload = function() {
+	  context.drawImage(image, 0, 0);
+
+	  var canvasdata = canvas.toDataURL("image/png");
+
+	  var pngimg = '<img src="'+canvasdata+'">'; 
+  	  d3.select("#pngdataurl").html(pngimg);
+
+	  var a = document.createElement("a");
+	  a.download = "sample.png";
+	  a.href = canvasdata;
+          document.body.appendChild(a);
+	  a.click();
+  };
+
+});
 
 });
 
