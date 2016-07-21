@@ -159,3 +159,44 @@
             }
             regressionService.renderRegression('RegresionLOG', vm.configRegressionLogaritmica);
         }
+		
+		vm.descargarSVG = function (div) {
+
+            var id = "des" + div,
+                svgNode = d3.select("#" + div).select("svg").node(),
+                myCss = servicioUtilidades.getStyleSheet("DownloadReg"),
+                listCss = [],
+                rules = myCss.rules || myCss.cssRules; // Get the rules using:  W3C model  ||  IE model
+            
+            for (var i = 0; i < rules.length; i++)
+            { listCss.push(rules[i].cssText); }
+
+            // serialize our SVG XML to a string.
+            var svgString = new XMLSerializer().serializeToString(svgNode);
+            svgString = svgString.replace("><defs/>", " id='"+ id +"'><defs><style>" + listCss.join(' ') + "</style></defs>");
+
+            var newCanvas = document.createElement('canvas'),
+                context = newCanvas.getContext("2d");
+
+            newCanvas.setAttribute("id", id);
+            newCanvas.width = parseInt(svgNode.getAttribute("width"));
+            newCanvas.height = parseInt(svgNode.getAttribute("height"));
+
+            document.body.appendChild(newCanvas);
+            
+            var DOMURL = self.URL || self.webkitURL || self;
+            var image = new Image();
+            var svg = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+            var url = DOMURL.createObjectURL(svg);
+            
+            image.onload = function () {
+                context.drawImage(image, 0, 0);
+
+                vm.descargarGrafico(id, false, newCanvas.width, newCanvas.height);
+
+                document.body.removeChild(newCanvas);
+
+            };
+            image.src = url;
+
+        }
